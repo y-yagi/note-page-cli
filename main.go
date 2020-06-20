@@ -22,7 +22,7 @@ type page struct {
 	UpdatedAt time.Time `firestore:"updatedAt"`
 }
 
-const cmd = "firefighter"
+const cmd = "note-page-cli"
 
 type config struct {
 	AccountKeyFile string `toml:"account_key_file"`
