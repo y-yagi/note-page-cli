@@ -215,6 +215,10 @@ func addNoteBookId(client *firestore.Client) error {
 				return fmt.Errorf("failed to iterate: %v", err)
 			}
 
+			if id, _ := doc.DataAt("noteBookId"); id != nil {
+				continue
+			}
+
 			if err = tx.Set(doc.Ref, map[string]interface{}{"noteBookId": defaultBook.ID}, firestore.MergeAll); err != nil {
 				return err
 			}
