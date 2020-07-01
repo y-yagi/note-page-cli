@@ -22,6 +22,13 @@ type page struct {
 	UpdatedAt time.Time `firestore:"updatedAt"`
 }
 
+type notebook struct {
+	ID        string
+	Name      string    `firestore:"name"`
+	CreatedAt time.Time `firestore:"createdAt"`
+	UpdatedAt time.Time `firestore:"updatedAt"`
+}
+
 const cmd = "note-page-cli"
 
 type config struct {
@@ -87,6 +94,14 @@ func main() {
 
 		fmt.Printf("migrate finished.\n")
 	} else {
+		var books []notebook
+		if err = fetchNoteBooks(client, &books); err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("%+v\n", books)
+
 		var pages []page
 		if err = fetchPages(client, &pages); err != nil {
 			fmt.Printf("%v\n", err)
@@ -142,6 +157,31 @@ func fetchPages(client *firestore.Client, pages *[]page) error {
 		p.ID = doc.Ref.ID
 
 		*pages = append(*pages, p)
+	}
+
+	return nil
+}
+
+func fetchNoteBooks(client *firestore.Client, notebooks *[]notebook) error {
+	iter := client.Collection("notebooks").OrderBy("createdAt", firestore.Asc).Documents(ctx)
+
+	var b notebook
+
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to iterate: %v", err)
+		}
+
+		if err := doc.DataTo(&b); err != nil {
+			return fmt.Errorf("failed to convert to Bookmark: %v", err)
+		}
+		b.ID = doc.Ref.ID
+
+		*notebooks = append(*notebooks, b)
 	}
 
 	return nil
