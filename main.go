@@ -87,7 +87,7 @@ func main() {
 	defer client.Close()
 
 	if migrate {
-		if err = addUpdatedAt(client); err != nil {
+		if err = addNoteBookId(client); err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
@@ -187,7 +187,21 @@ func fetchNoteBooks(client *firestore.Client, notebooks *[]notebook) error {
 	return nil
 }
 
-func addUpdatedAt(client *firestore.Client) error {
+func addNoteBookId(client *firestore.Client) error {
+	var books []notebook
+	if err := fetchNoteBooks(client, &books); err != nil {
+		fmt.Printf("%v\n", err)
+		os.Exit(1)
+	}
+
+	var defaultBook notebook
+	for _, book := range books {
+		if book.Name == "default" {
+			defaultBook = book
+			break
+		}
+	}
+
 	iter := client.Collection("pages").Documents(ctx)
 
 	return client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
@@ -201,12 +215,7 @@ func addUpdatedAt(client *firestore.Client) error {
 				return fmt.Errorf("failed to iterate: %v", err)
 			}
 
-			time, err := doc.DataAt("createdAt")
-			if err != nil {
-				return err
-			}
-
-			if err = tx.Set(doc.Ref, map[string]interface{}{"updatedAt": time}, firestore.MergeAll); err != nil {
+			if err = tx.Set(doc.Ref, map[string]interface{}{"noteBookId": defaultBook.ID}, firestore.MergeAll); err != nil {
 				return err
 			}
 		}
